@@ -149,7 +149,66 @@ static void putblock(char *b, size_t bsize, size_t * rsize,
 			break;
 
 		case JFFS2_COMPR_LZMA: {
-			// https://sourceforge.net/p/lzmautils/discussion/708858/thread/d02ebb9386/
+#if 0
+			memset((Bytef *) b + je32_to_cpu(n->offset), je32_to_cpu(n->version), dlen);
+#elif 0
+
+			lzma_ret ret;
+			Bytef *in = (Bytef *) ((char *) n) + sizeof(struct jffs2_raw_inode);
+
+			lzma_options_lzma opt_lzma;
+			if (lzma_lzma_preset(&opt_lzma, 1)) {
+				fprintf(stderr, "preset failed\n");
+				exit(1);
+			}
+			lzma_filter filters[LZMA_FILTERS_MAX + 1];
+			filters[0].id = LZMA_FILTER_LZMA2;
+			filters[0].options = &opt_lzma;
+			filters[1].id = LZMA_VLI_UNKNOWN;
+
+			lzma_lz_decoder lz;
+//			memset(&lz, 0, sizeof(lz));
+//			ret = lzma_lzma_decoder_create(&lz, NULL, NULL, NULL);
+			size_t in_size = je32_to_cpu(n->csize);
+			Bytef *out = (Bytef *) b + je32_to_cpu(n->offset);
+			// ret = lzma_raw_buffer_decode(filters, NULL, in, &in_size, in_size, out, &dlen, dlen);
+
+
+			lzma_block block; // = LZMA_BLOCK_INIT;
+			memset(&block, 0, sizeof(block));
+			lzma_check gCheck = LZMA_CHECK_NONE;
+			block = (lzma_block){ .check = gCheck, .filters = filters,
+			  .version = 0 };
+			block.header_size = lzma_block_header_size_decode(in[0]);
+			block.header_size = 8;
+			block.compressed_size = n->csize.v32;
+			block.uncompressed_size = n->dsize.v32;
+			lzma_stream strm = LZMA_STREAM_INIT;
+			// ret = lzma_block_header_decode(&block, NULL, in);
+			// lzma_ret ret = lzma_stream_decoder(&strm, UINT64_MAX, LZMA_CONCATENATED);
+			// lzma_ret ret = lzma_stream_decoder(&strm, UINT64_MAX, 0);
+			// ret = lzma_block_decoder(&strm, &block);
+			for (int offset = 0; offset < 1; offset++) {
+				ret = lzma_raw_decoder(&strm, filters);
+				if (ret != LZMA_OK) {
+					fprintf(stderr, "Write error: %s\n",
+					strerror(errno));
+				}
+				strm.next_in = in + offset;
+				strm.avail_in = je32_to_cpu(n->csize) - offset;
+				strm.next_out = (Bytef *) b + je32_to_cpu(n->offset);
+				ret = lzma_code(&strm, LZMA_RUN);
+				if (ret == LZMA_OK) {
+					printf("lzma_code ret:%d offset:%d in:%ld\n", ret, offset, strm.total_in);
+				}
+			}
+			if (ret != LZMA_OK) {
+				fprintf(stderr, "Write error: %s\n",
+				strerror(errno));
+			}
+			ret = lzma_code(&strm, LZMA_FINISH);
+			lzma_end(&strm);
+#else
 			lzma_stream strm = LZMA_STREAM_INIT;
 			size_t csize = je32_to_cpu(n->csize);
 			Bytef *in = (Bytef *) ((char *) n) + sizeof(struct jffs2_raw_inode);
@@ -185,6 +244,7 @@ static void putblock(char *b, size_t bsize, size_t * rsize,
 				printf("lzma_code ret:%d in:%ld\n", ret, strm.total_in);
 			}
 			free(compressed_with_header);
+#endif
 		}
 			break;
 
