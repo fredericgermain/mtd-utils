@@ -66,6 +66,7 @@ need_pthread="no"
 need_uuid="no"
 need_zlib="no"
 need_lzo="no"
+need_lzma="no"
 need_zstd="no"
 need_xattr="no"
 need_cmocka="no"
@@ -139,6 +140,7 @@ AM_COND_IF([BUILD_JFFSX], [
 	need_xattr="yes"
 	need_zlib="yes"
 	need_lzo="yes"
+	need_lzma="yes"
 ])
 
 AC_ARG_WITH([xattr],
@@ -156,6 +158,14 @@ AC_ARG_WITH([lzo],
 	yes) ;;
 	no) need_lzo="no" ;;
 	*) AC_MSG_ERROR([bad value ${withval} for --without-lzo]) ;;
+	esac])
+
+AC_ARG_WITH([lzma],
+	[AS_HELP_STRING([--without-lzma], [Disable support for LZMA compression])],
+	[case "${withval}" in
+	yes) ;;
+	no) need_lzma="no" ;;
+	*) AC_MSG_ERROR([bad value ${withval} for --without-lzma]) ;;
 	esac])
 
 AC_ARG_WITH([zstd],
@@ -226,6 +236,14 @@ if test "x$need_lzo" = "xyes"; then
 		[AC_CHECK_LIB([lzo],[lzo1x_1_15_compress],[LZO_LIBS="-llzo"],
 			[lzo_missing="yes"]
 		)]
+	)
+fi
+
+if test "x$need_lzma" = "xyes"; then
+	AC_ARG_VAR([LZMA_CFLAGS], [C compiler flags for lzma])
+	AC_ARG_VAR([LZMA_LIBS], [linker flags for lzma])
+	AC_CHECK_LIB([lzma], [lzma_stream_decoder], [LZMA_LIBS="-llzma"],
+		[lzma_missing="yes"]
 	)
 fi
 

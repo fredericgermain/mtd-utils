@@ -36,6 +36,7 @@ extern int target_endian;
 #define le32_to_cpu(x)	(__BYTE_ORDER==__LITTLE_ENDIAN ? (x) : bswap_32(x))
 #define cpu_to_le16(x)	(__BYTE_ORDER==__LITTLE_ENDIAN ? (x) : bswap_16(x))
 #define cpu_to_le32(x)	(__BYTE_ORDER==__LITTLE_ENDIAN ? (x) : bswap_32(x))
+#define cpu_to_le64(x)	(__BYTE_ORDER==__LITTLE_ENDIAN ? (x) : bswap_64(x))
 
 /* XATTR/POSIX-ACL related definition */
 /* Namespaces copied from xattr.h and posix_acl_xattr.h */

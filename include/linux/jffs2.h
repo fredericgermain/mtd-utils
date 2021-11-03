@@ -47,6 +47,8 @@
 #define JFFS2_COMPR_DYNRUBIN	0x05
 #define JFFS2_COMPR_ZLIB	0x06
 #define JFFS2_COMPR_LZO		0x07
+// diff --git a/target/linux/generic/patches-4.1/530-jffs2_make_lzma_available.patch b/target/linux/generic/patches-4.1/530-jffs2_make_lzma_available.patch
+#define JFFS2_COMPR_LZMA	0x08 // https://git.openwrt.org/project/ubus.git;git://git.openwrt.org/project/ubox.git?p=openwrt/openwrt.git;a=commitdiff;h=a0c49ef46f7caf5eb02c635d446218201008ecff;hp=518ab154e059c9f39684f8c78159c9caf333716b
 /* Compatibility flags. */
 #define JFFS2_COMPAT_MASK 0xc000      /* What do to if an unknown nodetype is found */
 #define JFFS2_NODE_ACCURATE 0x2000
