@@ -65,6 +65,7 @@ need_clock_gettime="no"
 need_pthread="no"
 need_uuid="no"
 need_zlib="no"
+need_lzma=""
 need_lzo="no"
 need_zstd="no"
 need_xattr="no"
@@ -158,6 +159,14 @@ AC_ARG_WITH([lzo],
 	*) AC_MSG_ERROR([bad value ${withval} for --without-lzo]) ;;
 	esac])
 
+AC_ARG_WITH([lzma],
+	[AS_HELP_STRING([--without-lzma], [Disable support for LZMA compression])],
+	[case "${withval}" in
+	yes) need_lzma="yes";;
+	no) need_lzma="no" ;;
+	*) AC_MSG_ERROR([bad value ${withval} for --without-lzma]) ;;
+	esac])
+
 AC_ARG_WITH([zstd],
 	[AS_HELP_STRING([--without-zstd], [Disable support for ZSTD compression])],
 	[case "${withval}" in
@@ -190,6 +199,7 @@ clock_gettime_missing="no"
 pthread_missing="no"
 uuid_missing="no"
 zlib_missing="no"
+lzma_missing="no"
 lzo_missing="no"
 zstd_missing="no"
 xattr_missing="no"
@@ -217,6 +227,14 @@ fi
 
 if test "x$need_pthread" = "xyes"; then
 	AX_PTHREAD([], [pthread_missing="yes"])
+fi
+
+if test "x$need_lzma" != "xno"; then
+	AC_ARG_VAR([LZMA_CFLAGS], [C compiler flags for lzma])
+	AC_ARG_VAR([LZMA_LIBS], [linker flags for lzma])
+	AC_CHECK_LIB([lzma], [lzma_alone_decoder], [LZMA_LIBS="-llzma"],
+		[lzma_missing="yes"]
+	)
 fi
 
 if test "x$need_lzo" = "xyes"; then
@@ -287,6 +305,11 @@ if test "x$zlib_missing" = "xyes"; then
 	dep_missing="yes"
 fi
 
+if test "x$need_lzma" = "xyes" -a "x$lzma_missing" = "xyes"; then
+	AC_MSG_WARN([cannot find LZMA library required by options])
+	dep_missing="yes"
+fi
+
 if test "x$lzo_missing" = "xyes"; then
 	AC_MSG_WARN([cannot find LZO library required for mkfs programs])
 	AC_MSG_NOTICE([mtd-utils can optionally be built without mkfs.ubifs])
@@ -339,6 +362,7 @@ fi
 ##### generate output #####
 
 AM_CONDITIONAL([WITHOUT_LZO], [test "x$need_lzo" != "xyes"])
+AM_CONDITIONAL([WITHOUT_LZMA], [test "x$need_lzma" == "xno" -o "x$missing_lzma" == "xyes" ])
 AM_CONDITIONAL([WITHOUT_ZSTD], [test "x$need_zstd" != "xyes"])
 AM_CONDITIONAL([WITHOUT_XATTR], [test "x$need_xattr" != "xyes"])
 AM_CONDITIONAL([WITH_SELINUX], [test "x$need_selinux" == "xyes"])

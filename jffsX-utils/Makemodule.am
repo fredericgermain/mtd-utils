@@ -16,7 +16,7 @@ mkfs_jffs2_LDADD = libmtd.a $(ZLIB_LIBS) $(LZO_LIBS)
 mkfs_jffs2_CPPFLAGS = $(AM_CPPFLAGS) $(ZLIB_CFLAGS) $(LZO_CFLAGS)
 
 jffs2reader_SOURCES = jffsX-utils/jffs2reader.c	include/mtd/jffs2-user.h
-jffs2reader_LDADD = libmtd.a $(ZLIB_LIBS) $(LZO_LIBS)
+jffs2reader_LDADD = libmtd.a $(ZLIB_LIBS) $(LZO_LIBS) $(LZMA_LIBS)
 jffs2reader_CPPFLAGS = $(AM_CPPFLAGS) $(ZLIB_CFLAGS) $(LZO_CFLAGS)
 
 jffs2dump_SOURCES = jffsX-utils/jffs2dump.c include/mtd/jffs2-user.h

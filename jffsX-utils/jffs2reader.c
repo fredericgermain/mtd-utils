@@ -76,6 +76,9 @@ BUGS:
 #include <sys/stat.h>
 #include <dirent.h>
 #include <zlib.h>
+#ifndef WITHOUT_LZMA
+#include <lzma.h>
+#endif
 
 #include "mtd/jffs2-user.h"
 #include "common.h"
@@ -146,6 +149,48 @@ static void putblock(char *b, size_t bsize, size_t * rsize,
 		case JFFS2_COMPR_ZERO:
 			bzero(b + je32_to_cpu(n->offset), dlen);
 			break;
+
+#ifndef WITHOUT_LZMA
+		case JFFS2_COMPR_LZMA: {
+			// https://sourceforge.net/p/lzmautils/discussion/708858/thread/d02ebb9386/
+			lzma_stream strm = LZMA_STREAM_INIT;
+			size_t csize = je32_to_cpu(n->csize);
+			Bytef *in = (Bytef *) ((char *) n) + sizeof(struct jffs2_raw_inode);
+			Bytef *out = (Bytef *) b + je32_to_cpu(n->offset);
+			Bytef *compressed_with_header = xmalloc(13 + csize);
+
+			// LZMA properties byte (lc/lp/pb). typical 3/0/2 is 0x5D.
+			// But here works with 0/0/0
+			compressed_with_header[0] = 0;
+
+			// dictionary size as bytes[4], using value from preset 1
+			lzma_options_lzma opt_lzma;
+			if (lzma_lzma_preset(&opt_lzma, 1)) {
+				fprintf(stderr, "preset failed\n");
+				exit(1);
+			}
+			uint32_t dict_size_le = cpu_to_le32(opt_lzma.dict_size);
+			memcpy(&compressed_with_header[1], &dict_size_le, sizeof(dict_size_le));
+
+			// uncompressed size as unsigned 60-bit little endian integer
+			uint64_t uncompressed_size_le = cpu_to_le64(dlen);
+			memcpy(&compressed_with_header[5], &uncompressed_size_le, sizeof(uncompressed_size_le));
+
+			memcpy(&compressed_with_header[13], in, csize);
+			lzma_ret ret = lzma_alone_decoder(&strm, UINT64_MAX);
+			// lzma_ret ret = lzma_alone_decoder(&strm, hardware_memlimit_get(MODE_DECOMPRESS));
+			strm.next_in = compressed_with_header;
+			strm.avail_in = 13 + csize;
+			strm.next_out = out;
+			strm.avail_out = dlen;
+			ret = lzma_code(&strm, LZMA_RUN);
+			if (ret == LZMA_OK) {
+				printf("lzma_code ret:%d in:%ld\n", ret, strm.total_in);
+			}
+			free(compressed_with_header);
+		}
+			break;
+#endif
 
 			/* [DYN]RUBIN support required! */
 
