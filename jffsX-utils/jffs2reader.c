@@ -480,18 +480,19 @@ static struct jffs2_raw_inode *find_raw_inode(char *o, size_t size,
 
 		if (n < e && je16_to_cpu(n->u.magic) == JFFS2_MAGIC_BITMASK) {
 			if (je16_to_cpu(n->u.nodetype) == JFFS2_NODETYPE_INODE &&
-				je32_to_cpu(n->i.ino) == ino && (v = je32_to_cpu(n->i.version)) > vcur) {
+				je32_to_cpu(n->i.ino) == ino && (v = je32_to_cpu(n->i.version)) > vcur && je32_to_cpu(n->i.csize)) {
 				/* XXX crc check */
 
-				if (vmaxt < v)
+				if (vmaxt < v) {
 					vmaxt = v;
-				if (vmint > v) {
-					vmint = v;
 					mp = n;
 				}
+					if (vmint > v) {
+					vmint = v;
+				}
 
-				if (v == (vcur + 1))
-					return (&(n->i));
+//				if (v == (vcur + 1))
+//					return (&(n->i));
 			}
 
 			ADD_BYTES(n, ((je32_to_cpu(n->u.totlen) + 3) & ~3));
